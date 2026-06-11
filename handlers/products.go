@@ -1,3 +1,17 @@
+// Package classification Product API
+//
+// # Documentation for Product API
+//
+// Schemes: http
+// BasePath: /
+// Version: 1.0.0
+//
+// Consumes:
+// - application/json
+//
+// Produces:
+// - application/json
+// swagger:meta
 package handlers
 
 import (
@@ -5,11 +19,29 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/Wai-Thura-Tun/microservices-ecomm/data"
-	"github.com/gorilla/mux"
 )
+
+// A list of products returns in the response
+// swagger:response productsResponse
+type ProductsResponse struct {
+	// All products in the system
+	// in: body
+	Body []data.Product
+}
+
+// swagger:response noContent
+type ProductsNoContent struct {
+}
+
+// swagger:parameters deleteProduct
+type ProductIDParameterWrapper struct {
+	// The ID of the product to delete from the database
+	// in: path
+	// required: true
+	ID int `json:"id"`
+}
 
 type Products struct {
 	l *log.Logger
@@ -61,47 +93,6 @@ func NewProduct(l *log.Logger) *Products {
 // 	// catch all
 // 	rw.WriteHeader(http.StatusMethodNotAllowed)
 // }
-
-func (p *Products) GetProducts(rw http.ResponseWriter, r *http.Request) {
-	lp := data.GetProducts()
-	err := lp.ToJSON(rw)
-	if err != nil {
-		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
-	}
-}
-
-func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
-	p.l.Println("Handle post product")
-
-	prod := r.Context().Value(KeyProduct{}).(data.Product)
-	data.AddProduct(&prod)
-}
-
-func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
-	p.l.Println("Handle PUT request")
-
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-
-	if err != nil {
-		http.Error(rw, "Request URL is invalid", http.StatusBadRequest)
-		return
-	}
-
-	prod := r.Context().Value(KeyProduct{}).(data.Product)
-
-	err = data.UpdateProduct(id, &prod)
-	if err == data.ErrorProductNotFound {
-		http.Error(rw, "Not found", http.StatusNotFound)
-		return
-	}
-
-	if err != nil {
-		http.Error(rw, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
-
-}
 
 // Middleware Section
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wai-Thura-Tun/microservices-ecomm/handlers"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 )
 
@@ -25,15 +26,25 @@ func main() {
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/", p.GetProducts)
 
+	// create subrouter with put method
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", p.UpdateProduct)
+	putRouter.Use(p.MiddlewareProductValidate)
+
 	// create subrouter with post method
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/", p.AddProduct)
 	postRouter.Use(p.MiddlewareProductValidate)
 
-	// create subrouter with put method
-	putRouter := sm.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/{id:[0-9]+}", p.UpdateProduct)
-	putRouter.Use(p.MiddlewareProductValidate)
+	// create subrouter with delete method
+	deleteRouter := sm.Methods(http.MethodDelete).Subrouter()
+	deleteRouter.HandleFunc("/{id:[0-9]+}", p.DeleteProduct)
+
+	ops := middleware.RedocOpts{SpecURL: "/swagger.yml"}
+	sh := middleware.Redoc(ops, nil)
+
+	getRouter.Handle("/docs", sh)
+	getRouter.Handle("/swagger.yml", http.FileServer(http.Dir("./")))
 
 	s := &http.Server{
 		Addr:         ":9090",
